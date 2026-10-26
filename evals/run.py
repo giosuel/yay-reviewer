@@ -5,7 +5,7 @@ Each case in evals/cases/<name>/ has before/ and after/ file trees and a
 case.json. For every case this builds a git repo named after the package,
 commits before/ and marks it approved (CLAUDE_REVIEWED), then commits after/
 as the update to review, exactly like yay's clone in ~/.cache/yay/<pkg>.
-All cases are then reviewed in one aur-review --no-mark --json run.
+All cases are then reviewed in one yay-reviewer-hook --no-mark --json run.
 
 Expected outcomes in case.json:
   safe   routine update: must come back "safe"
@@ -14,7 +14,7 @@ Expected outcomes in case.json:
 
 Usage:
   evals/run.py [CASE...]          run all cases, or only the named ones
-Environment variables of aur-review (AUR_REVIEW_MODEL, AUR_REVIEW_WORKERS, ...) apply.
+Environment variables of yay-reviewer-hook (YAY_REVIEWER_MODEL, YAY_REVIEWER_WORKERS, ...) apply.
 Costs real money: roughly $0.05-0.10 per case.
 """
 
@@ -30,7 +30,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 CASES = HERE / "cases"
 RESULTS = HERE / "results"
-AUR_REVIEW = HERE.parent / "aur-review"
+HOOK = HERE.parent / "yay-reviewer-hook"
 
 
 def git(d, *args, author=None):
@@ -69,7 +69,7 @@ def score(expect, verdict):
 
 def main(argv):
     names = argv or sorted(p.name for p in CASES.iterdir() if p.is_dir())
-    work = Path(tempfile.mkdtemp(prefix="aur-review-eval-"))
+    work = Path(tempfile.mkdtemp(prefix="yay-reviewer-eval-"))
     try:
         metas, pkgbuilds = [], []
         for n in names:
@@ -77,10 +77,10 @@ def main(argv):
             metas.append(meta | {"case": n})
             pkgbuilds.append(str(pkgbuild))
 
-        env = os.environ | {"AUR_REVIEW_AUR_RPC": "",  # fictional packages: no AUR lookup
+        env = os.environ | {"YAY_REVIEWER_AUR_RPC": "",  # fictional packages: no AUR lookup
                             "XDG_STATE_HOME": str(work / "state")}
         print(f"Reviewing {len(names)} cases...", file=sys.stderr, flush=True)
-        r = subprocess.run([str(AUR_REVIEW), "--no-mark", "--json", *pkgbuilds], env=env,
+        r = subprocess.run([str(HOOK), "--no-mark", "--json", *pkgbuilds], env=env,
                            capture_output=True, text=True)
         results = json.loads(r.stdout)
     finally:
@@ -111,7 +111,7 @@ def main(argv):
 
     RESULTS.mkdir(exist_ok=True)
     out = RESULTS / f"{datetime.datetime.now():%Y%m%d-%H%M%S}.json"
-    out.write_text(json.dumps({"model": os.environ.get("AUR_REVIEW_MODEL"), "rows": rows}, indent=2))
+    out.write_text(json.dumps({"model": os.environ.get("YAY_REVIEWER_MODEL"), "rows": rows}, indent=2))
     print(f"details: {out}")
     return 0 if all(r["result"] == "pass" for r in rows) else 1
 

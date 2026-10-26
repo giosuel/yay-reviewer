@@ -1,15 +1,18 @@
-# Maintainer: giosuel <arch at giosuel dot ch>
-pkgname=aur-reviewer
+# Maintainer: giosuel <me at giosuel dot ch>
+# pkgver and sha256sums are filled in from the tag by .github/workflows/release.yml.
+pkgname=yay-reviewer
 pkgver=0.1.0
 pkgrel=1
-pkgdesc="Have Claude review AUR build files (PKGBUILD, install scripts, hooks) before yay builds them"
+pkgdesc="yay, but Claude reviews every AUR package's build files (PKGBUILD, install scripts, hooks) before they're built"
 arch=('any')
-url="https://github.com/giosuel/aur-reviewer"
+url="https://github.com/giosuel/yay-reviewer"
 license=('AGPL-3.0-only')
 depends=('git' 'python' 'yay')
 optdepends=("claude-code: Claude Code CLI used for the reviews (or use Anthropic's own installer)")
+conflicts=('aur-reviewer')
+replaces=('aur-reviewer')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('a4785f4053e7e4b3e0e87c13c47e86c35ac198d9682b77136b261cb9c14c596f')
+sha256sums=('SKIP')
 
 check() {
   cd "$pkgname-$pkgver"
@@ -19,6 +22,6 @@ check() {
 package() {
   cd "$pkgname-$pkgver"
   install -Dm755 yay-review -t "$pkgdir/usr/bin/"
-  install -Dm755 aur-review -t "$pkgdir/usr/lib/$pkgname/"
+  install -Dm755 yay-reviewer-hook -t "$pkgdir/usr/lib/$pkgname/"
   install -Dm644 README.md -t "$pkgdir/usr/share/doc/$pkgname/"
 }

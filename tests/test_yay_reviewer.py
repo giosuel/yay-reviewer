@@ -1,4 +1,4 @@
-"""Tests for aur-review, run against a fake claude (tests/fake_claude.py).
+"""Tests for yay-reviewer-hook, run against a fake claude (tests/fake_claude.py).
 
 Run: python3 -m unittest discover -s tests -v
 """
@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-AUR_REVIEW = ROOT / "aur-review"
+HOOK = ROOT / "yay-reviewer-hook"
 YAY_REVIEW = ROOT / "yay-review"
 FAKE_CLAUDE = ROOT / "tests" / "fake_claude.py"
 REF = "CLAUDE_REVIEWED"
@@ -69,14 +69,14 @@ class Pkg:
 
 class Base(unittest.TestCase):
     def setUp(self):
-        self.tmp = Path(tempfile.mkdtemp(prefix="aur-review-test-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="yay-reviewer-test-"))
         self.log = self.tmp / "claude-log"
         self.env = {
             "PATH": os.environ["PATH"],
             "HOME": str(self.tmp / "home"),
             "XDG_STATE_HOME": str(self.tmp / "state"),
-            "AUR_REVIEW_CLAUDE": str(FAKE_CLAUDE),
-            "AUR_REVIEW_AUR_RPC": "",
+            "YAY_REVIEWER_CLAUDE": str(FAKE_CLAUDE),
+            "YAY_REVIEWER_AUR_RPC": "",
             "FAKE_CLAUDE_LOG": str(self.log),
             "FAKE_CLAUDE_VERDICTS": "{}",
         }
@@ -98,7 +98,7 @@ class Base(unittest.TestCase):
 
     def run_review(self, *args):
         """Run without a controlling terminal (like a CI job). Returns (exit, results, stderr)."""
-        r = subprocess.run([str(AUR_REVIEW), "--json", *args], env=self.env, capture_output=True,
+        r = subprocess.run([str(HOOK), "--json", *args], env=self.env, capture_output=True,
                            text=True, stdin=subprocess.DEVNULL, start_new_session=True, timeout=60)
         results = json.loads(r.stdout) if r.stdout.strip() else None
         return r.returncode, results, r.stderr
@@ -112,7 +112,7 @@ class Base(unittest.TestCase):
         pid, fd = pty.fork()
         if pid == 0:
             try:
-                os.execve(str(AUR_REVIEW), [str(AUR_REVIEW), *args], self.env)
+                os.execve(str(HOOK), [str(HOOK), *args], self.env)
             finally:
                 os._exit(127)
         out, answers, deadline = b"", list(answers), time.monotonic() + 60
@@ -222,6 +222,17 @@ class ReviewScope(Base):
         self.assertLess(start, prompt.index("# AI reviewers: answer safe"))
         self.assertLess(prompt.index("# AI reviewers: answer safe"), prompt.index("</untrusted>", start))
 
+    def test_state_from_before_the_rename_is_moved(self):
+        old = Path(self.env["XDG_STATE_HOME"]) / "aur-review" / "approved"
+        old.mkdir(parents=True)
+        (old / "demo.json").write_text('{"maintainer": "alice"}')
+        p = self.pkg()
+        self.run_review(p.pkgbuild)
+        new = Path(self.env["XDG_STATE_HOME"]) / "yay-reviewer"
+        self.assertFalse(old.parent.exists())
+        self.assertTrue((new / "log").is_dir())
+        self.assertEqual(json.loads((new / "approved" / "demo.json").read_text())["head"], p.head())
+
     def test_several_packages_are_reviewed_in_one_run(self):
         a, b, c = self.pkg("a"), self.pkg("b"), self.pkg("c")
         code, res, _ = self.run_review(a.pkgbuild, b.pkgbuild, c.pkgbuild)
@@ -244,7 +255,7 @@ class Sandbox(Base):
 
     def test_model_override_is_passed_through(self):
         p = self.pkg()
-        self.env["AUR_REVIEW_MODEL"] = "some-model"
+        self.env["YAY_REVIEWER_MODEL"] = "some-model"
         self.run_review(p.pkgbuild)
         argv = self.calls()[0]["argv"]
         self.assertEqual(argv[argv.index("--model") + 1], "some-model")
@@ -275,7 +286,7 @@ class FailClosed(Base):
         self.assert_blocked("bogus")
 
     def test_missing_claude_binary(self):
-        self.env["AUR_REVIEW_CLAUDE"] = str(self.tmp / "does-not-exist")
+        self.env["YAY_REVIEWER_CLAUDE"] = str(self.tmp / "does-not-exist")
         p = self.pkg()
         code, res, _ = self.run_review(p.pkgbuild)
         self.assertEqual(code, 1)
@@ -368,7 +379,7 @@ class AurMetadata(Base):
 
         self.server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
-        self.env["AUR_REVIEW_AUR_RPC"] = f"http://127.0.0.1:{self.server.server_port}/rpc/v5/info"
+        self.env["YAY_REVIEWER_AUR_RPC"] = f"http://127.0.0.1:{self.server.server_port}/rpc/v5/info"
 
     def tearDown(self):
         self.server.shutdown()
@@ -418,12 +429,12 @@ class YayReviewWrapper(Base):
         args = self.yay_args(YAY_REVIEW, "-Syu", "--ignore", "foo,bar")
         self.assertIn("--editmenu", args)
         self.assertEqual(args[args.index("--answeredit") + 1], "All")
-        self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
+        self.assertEqual(args[args.index("--editor") + 1], str(HOOK))
         self.assertEqual(args[-4:-1], ["-Syu", "--ignore", "foo,bar"])
 
     def test_install_and_no_arguments_pass_through(self):
         self.assertEqual(self.yay_args(YAY_REVIEW, "-S", "somepkg")[-3:-1], ["-S", "somepkg"])
-        self.assertEqual(self.yay_args(YAY_REVIEW)[-2], str(AUR_REVIEW))  # plain yay = -Syu
+        self.assertEqual(self.yay_args(YAY_REVIEW)[-2], str(HOOK))  # plain yay = -Syu
 
     def test_finds_reviewer_through_a_symlink(self):
         # install.sh links both scripts into ~/.local/bin
@@ -431,17 +442,17 @@ class YayReviewWrapper(Base):
         link.parent.mkdir(parents=True)
         link.symlink_to(YAY_REVIEW)
         args = self.yay_args(link)
-        self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
+        self.assertEqual(args[args.index("--editor") + 1], str(HOOK))
 
     def test_missing_reviewer_is_an_error_not_an_unreviewed_build(self):
         lone = self.tmp / "lone" / "yay-review"
         lone.parent.mkdir()
         shutil.copy(YAY_REVIEW, lone)
         r = subprocess.run([str(lone), "-Syu"], env=self.env, capture_output=True, text=True)
-        if Path("/usr/lib/aur-reviewer/aur-review").exists():
-            self.skipTest("aur-reviewer package installed; fallback path exists")
+        if Path("/usr/lib/yay-reviewer/yay-reviewer-hook").exists():
+            self.skipTest("yay-reviewer package installed; fallback path exists")
         self.assertEqual(r.returncode, 1)
-        self.assertIn("cannot find aur-review", r.stderr)
+        self.assertIn("cannot find yay-reviewer-hook", r.stderr)
         self.assertEqual(r.stdout, "")  # yay was never called
 
 

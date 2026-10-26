@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Links yay-review from this repository into ~/.local/bin. (aur-review stays in
+# Links yay-review from this repository into ~/.local/bin. (yay-reviewer-hook stays in
 # the repo; yay-review finds it next to its own real location.)
 #
 # Runs as your normal user (no sudo): yay, makepkg and claude all run as you.
@@ -19,11 +19,11 @@ if [[ $EUID -eq 0 ]]; then
 fi
 
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
-BACKUP_ROOT="${BACKUP_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/aur-review/backups}"
+BACKUP_ROOT="${BACKUP_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/yay-reviewer/backups}"
 BACKUP_DIR="$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)"
 
 SCRIPTS=(yay-review)
-OBSOLETE=(aur-update aur-review)  # earlier versions linked these too
+OBSOLETE=(aur-update aur-review)  # names used by earlier versions
 
 # ---- Checks -----------------------------------------------------------------
 for f in "${SCRIPTS[@]}"; do

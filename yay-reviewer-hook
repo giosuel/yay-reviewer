@@ -11,16 +11,16 @@ Each approved revision is recorded in the clone as the git ref CLAUDE_REVIEWED,
 so later runs only review what changed since the last approval.
 
 Usage (normally called by yay through yay-review):
-  aur-review [--no-mark] [--full] [--json] PKGBUILD...
+  yay-reviewer-hook [--no-mark] [--full] [--json] PKGBUILD...
     --no-mark  review only: never prompt, never record approvals (for testing)
     --full     ignore CLAUDE_REVIEWED and review every file from scratch
     --json     print results as JSON on stdout instead of the human-readable report
 
 Environment:
-  AUR_REVIEW_MODEL    model passed to claude (default: claude's own default)
-  AUR_REVIEW_WORKERS  reviews run in parallel (default: 4)
-  AUR_REVIEW_CLAUDE   claude executable (default: claude)
-  AUR_REVIEW_AUR_RPC  AUR RPC info endpoint; empty disables the metadata lookup
+  YAY_REVIEWER_MODEL    model passed to claude (default: claude's own default)
+  YAY_REVIEWER_WORKERS  reviews run in parallel (default: 4)
+  YAY_REVIEWER_CLAUDE   claude executable (default: claude)
+  YAY_REVIEWER_AUR_RPC  AUR RPC info endpoint; empty disables the metadata lookup
 """
 
 import concurrent.futures
@@ -35,11 +35,13 @@ import urllib.request
 from pathlib import Path
 
 REF = "CLAUDE_REVIEWED"
-STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "aur-review"
-WORKERS = int(os.environ.get("AUR_REVIEW_WORKERS", "4"))
-MODEL = os.environ.get("AUR_REVIEW_MODEL")  # unset = your claude default
-CLAUDE = os.environ.get("AUR_REVIEW_CLAUDE", "claude")
-AUR_RPC = os.environ.get("AUR_REVIEW_AUR_RPC", "https://aur.archlinux.org/rpc/v5/info")
+STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "yay-reviewer"
+if not STATE.exists() and (STATE.parent / "aur-review").is_dir():
+    (STATE.parent / "aur-review").rename(STATE)  # state dir before the rename to yay-reviewer
+WORKERS = int(os.environ.get("YAY_REVIEWER_WORKERS", "4"))
+MODEL = os.environ.get("YAY_REVIEWER_MODEL")  # unset = your claude default
+CLAUDE = os.environ.get("YAY_REVIEWER_CLAUDE", "claude")
+AUR_RPC = os.environ.get("YAY_REVIEWER_AUR_RPC", "https://aur.archlinux.org/rpc/v5/info")
 TIMEOUT = 900
 MAX_TEXT = 150_000  # chars of diff / file content fed into the prompt
 

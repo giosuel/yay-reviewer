@@ -72,7 +72,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           version="${TAG#v}"
-          git clone ssh://aur@aur.archlinux.org/aur-reviewer.git aur
+          git clone ssh://aur@aur.archlinux.org/yay-reviewer.git aur
           cp packaging/aur/PKGBUILD aur/PKGBUILD
           cd aur
           url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"

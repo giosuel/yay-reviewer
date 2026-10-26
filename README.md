@@ -1,4 +1,4 @@
-# aur-reviewer
+# yay-reviewer
 
 Have Claude review every AUR package's build files before yay builds them.
 
@@ -6,7 +6,7 @@ AUR packages are build recipes written by anyone. Their `build()` and
 `package()` steps run as you, and their `.install` scripts and pacman hooks
 run as root. Malicious AUR uploads do happen, usually as a small change hidden
 in a routine-looking update, and almost nobody reads every PKGBUILD diff on
-every upgrade. `aur-reviewer` does that reading for you and stops the upgrade
+every upgrade. `yay-reviewer` does that reading for you and stops the upgrade
 when something looks wrong.
 
 Use `yay-review` exactly like `yay`:
@@ -47,17 +47,17 @@ There are two scripts, but you only ever run the first:
 | Script | Role |
 |---|---|
 | `yay-review` | What you run. Calls yay with your arguments, plus flags that plug in the reviewer. |
-| `aur-review` | The reviewer. yay calls it for you; it is not on your `PATH` when installed as a package. |
+| `yay-reviewer-hook` | The reviewer. yay calls it for you; it is not on your `PATH` when installed as a package. |
 
 yay has an *edit menu*: before building, it can open each AUR package's
 PKGBUILD in your editor so you can read or change it. `yay-review` runs yay
-with that menu enabled and `aur-review` set as the "editor":
+with that menu enabled and `yay-reviewer-hook` set as the "editor":
 
 ```
 yay-review -Syu
- └─ yay --editmenu --answeredit All --editor aur-review -Syu
+ └─ yay --editmenu --answeredit All --editor yay-reviewer-hook -Syu
      ├─ git pull the new PKGBUILDs into ~/.cache/yay/<pkg>
-     ├─ aur-review <pkg>/PKGBUILD ...           ← the review
+     ├─ yay-reviewer-hook <pkg>/PKGBUILD ...           ← the review
      │    ├─ per package: diff since the last approved revision
      │    ├─ claude -p, read-only, returns safe / caution / block
      │    ├─ asks you when needed, records approvals
@@ -113,7 +113,7 @@ CLI, logged in.
 **From the AUR:**
 
 ```bash
-yay -S aur-reviewer
+yay -S yay-reviewer
 ```
 
 This first install can't be reviewed by the tool itself, so read its
@@ -124,16 +124,16 @@ Anthropic's own installer.
 **From a clone** (tracks `main`):
 
 ```bash
-git clone https://github.com/giosuel/aur-reviewer
-cd aur-reviewer
+git clone https://github.com/giosuel/yay-reviewer
+cd yay-reviewer
 ./install.sh
 ```
 
 `install.sh` symlinks `yay-review` into `~/.local/bin`, so updating the clone
 (`git pull`) updates the tool. It runs as your normal user (no sudo), is safe
 to run repeatedly, backs up any differing copy it replaces to
-`~/.local/state/aur-review/backups/`, and removes links left by earlier
-versions (`aur-update`, `aur-review`).
+`~/.local/state/yay-reviewer/backups/`, and removes links left by earlier
+versions (`aur-update`, `yay-reviewer-hook`).
 
 The first `yay-review -Syu` reviews every pending AUR package in full. After
 that, only changes are reviewed.
@@ -149,25 +149,25 @@ alias --save yay yay-review          # fish
 
 ### Reviewing by hand
 
-`aur-review` can also be run directly, without prompting or recording anything.
-It lives in `/usr/lib/aur-reviewer/` (package) or the root of the clone:
+`yay-reviewer-hook` can also be run directly, without prompting or recording anything.
+It lives in `/usr/lib/yay-reviewer/` (package) or the root of the clone:
 
 ```bash
-aur-review --no-mark ~/.cache/yay/<pkg>/PKGBUILD          # changes since last approval
-aur-review --no-mark --full ~/.cache/yay/<pkg>/PKGBUILD   # everything
-aur-review --no-mark --json ~/.cache/yay/<pkg>/PKGBUILD   # machine-readable
+yay-reviewer-hook --no-mark ~/.cache/yay/<pkg>/PKGBUILD          # changes since last approval
+yay-reviewer-hook --no-mark --full ~/.cache/yay/<pkg>/PKGBUILD   # everything
+yay-reviewer-hook --no-mark --json ~/.cache/yay/<pkg>/PKGBUILD   # machine-readable
 ```
 
 ### Configuration
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AUR_REVIEW_MODEL` | claude's default | Model used for reviews |
-| `AUR_REVIEW_WORKERS` | `4` | Reviews run in parallel |
-| `AUR_REVIEW_CLAUDE` | `claude` | Claude Code executable |
-| `AUR_REVIEW_AUR_RPC` | `https://aur.archlinux.org/rpc/v5/info` | AUR RPC endpoint; empty disables the lookup |
+| `YAY_REVIEWER_MODEL` | claude's default | Model used for reviews |
+| `YAY_REVIEWER_WORKERS` | `4` | Reviews run in parallel |
+| `YAY_REVIEWER_CLAUDE` | `claude` | Claude Code executable |
+| `YAY_REVIEWER_AUR_RPC` | `https://aur.archlinux.org/rpc/v5/info` | AUR RPC endpoint; empty disables the lookup |
 
-State lives in `~/.local/state/aur-review/`: `log/` has one JSON file per
+State lives in `~/.local/state/yay-reviewer/`: `log/` has one JSON file per
 review, `approved/` the last approved revision and AUR maintainer per package.
 
 ### Cost
@@ -200,7 +200,7 @@ evals/run.py                               # evals against the real model (costs
 
 ### Tests
 
-`tests/` runs the real `aur-review` against throwaway git package repos and a
+`tests/` runs the real `yay-reviewer-hook` against throwaway git package repos and a
 fake `claude` (`tests/fake_claude.py`) that records what it was sent and
 returns configurable verdicts or failures. They cover review scope (full vs.
 incremental, force-pushes), the sandbox flags, failing closed, the approval
