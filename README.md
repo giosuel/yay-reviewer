@@ -9,10 +9,21 @@ in a routine-looking update, and almost nobody reads every PKGBUILD diff on
 every upgrade. `aur-reviewer` does that reading for you and stops the upgrade
 when something looks wrong.
 
+Use `yay-review` exactly like `yay`:
+
+```bash
+yay-review                # = yay -Syu: upgrade everything, AUR packages reviewed
+yay-review -S somepkg     # install an AUR package, reviewed in full first
+yay-review -Syu --ignore foo
+```
+
+Any yay arguments work. Commands that don't build AUR packages (`-Ss`, `-Q`,
+`-R`, repo-only installs) behave exactly like yay.
+
 Example session (abridged):
 
 ```
-$ aur-update
+$ yay-review -Syu
 :: Claude is reviewing 3 package(s): zen-browser-bin, lumen-cli, pixelnote-bin
 [SAFE   ] zen-browser-bin (changes since 4354c21, $0.08)
 [CAUTION] lumen-cli (changes since 8d63756, $0.07)
@@ -26,18 +37,25 @@ $ aur-update
           Type 'override' to build pixelnote-bin anyway, Enter to reject:
 
 Rejected: lumen-cli pixelnote-bin
-Nothing was built. To upgrade everything else: aur-update --ignore lumen-cli,pixelnote-bin
+Nothing was built. To skip them, run your command again with --ignore lumen-cli,pixelnote-bin, e.g. yay-review -Syu --ignore lumen-cli,pixelnote-bin
 ```
 
 ## How it works
 
-yay has an *edit menu*: before building, it can open each PKGBUILD in your
-editor so you can read or change it. `aur-update` runs yay with that menu
-enabled and `aur-review` set as the "editor":
+There are two scripts, but you only ever run the first:
+
+| Script | Role |
+|---|---|
+| `yay-review` | What you run. Calls yay with your arguments, plus flags that plug in the reviewer. |
+| `aur-review` | The reviewer. yay calls it for you; it is not on your `PATH` when installed as a package. |
+
+yay has an *edit menu*: before building, it can open each AUR package's
+PKGBUILD in your editor so you can read or change it. `yay-review` runs yay
+with that menu enabled and `aur-review` set as the "editor":
 
 ```
-aur-update
- └─ yay -Syu --editmenu --answeredit All --editor aur-review
+yay-review -Syu
+ └─ yay --editmenu --answeredit All --editor aur-review -Syu
      ├─ git pull the new PKGBUILDs into ~/.cache/yay/<pkg>
      ├─ aur-review <pkg>/PKGBUILD ...           ← the review
      │    ├─ per package: diff since the last approved revision
@@ -51,10 +69,11 @@ aur-update
 - **The reviewed files are exactly the ones that get built.** yay calls the
   editor after merging the new AUR revision and before downloading sources or
   building, so nothing can change in between.
-- **Only changes are reviewed.** Each approved revision is marked with the git
-  ref `CLAUDE_REVIEWED` in the package's clone. The next run reviews the diff
-  since then, plus the full PKGBUILD and install scripts for context. A package
-  without an approval, or whose history was rewritten, gets a full review.
+- **New packages get a full review; upgrades only their changes.** Each
+  approved revision is marked with the git ref `CLAUDE_REVIEWED` in the
+  package's clone. The next run reviews the diff since then, plus the full
+  PKGBUILD and install scripts for context. A package without an approval, or
+  whose history was rewritten, gets a full review.
 - **Context beyond the files:** commit authors, AUR metadata (maintainer,
   votes, out-of-date flag), and a note if the AUR maintainer changed since
   your last approval.
@@ -68,7 +87,7 @@ aur-update
 | `block` | Looks malicious: `curl \| sh`, unofficial or lookalike source, obfuscation, persistence, exfiltration, prompt injection | You must type `override` to build |
 | review error | claude failed, timed out or returned no valid verdict | Treated as `block` (fail closed) |
 
-Rejecting any package makes yay abort the whole upgrade, so nothing
+Rejecting any package makes yay abort the whole command, so nothing
 half-reviewed is built. Approvals given in that run are kept, so the next run
 only re-reviews the rejected packages.
 
@@ -110,31 +129,28 @@ cd aur-reviewer
 ./install.sh
 ```
 
-`install.sh` symlinks `aur-review` and `aur-update` into `~/.local/bin`, so
-updating the clone (`git pull`) updates the tool. It runs as your normal user
-(no sudo), is safe to run repeatedly, and backs up any differing copies it
-replaces to `~/.local/state/aur-review/backups/`.
+`install.sh` symlinks `yay-review` into `~/.local/bin`, so updating the clone
+(`git pull`) updates the tool. It runs as your normal user (no sudo), is safe
+to run repeatedly, backs up any differing copy it replaces to
+`~/.local/state/aur-review/backups/`, and removes links left by earlier
+versions (`aur-update`, `aur-review`).
 
-The first `aur-update` reviews every pending AUR package in full. After that,
-only changes are reviewed.
+The first `yay-review -Syu` reviews every pending AUR package in full. After
+that, only changes are reviewed.
 
-## Usage
+### Always review: alias yay
 
-```bash
-aur-update                    # full upgrade (yay -Syu) with AUR packages reviewed
-aur-update -S somepkg         # install a new AUR package, reviewed in full
-aur-update --ignore foo,bar   # upgrade everything except some packages
-```
-
-Any yay arguments work; `aur-update` only adds the review flags.
-
-To make plain `yay` always use the reviewer, save the flags in yay's config:
+To make plain `yay` reviewed too, alias it:
 
 ```bash
-yay --save --editmenu --answeredit All --editor "$(command -v aur-review)"
+alias yay=yay-review                 # bash/zsh, in ~/.bashrc or ~/.zshrc
+alias --save yay yay-review          # fish
 ```
 
-To review a package by hand without prompting or recording anything:
+### Reviewing by hand
+
+`aur-review` can also be run directly, without prompting or recording anything.
+It lives in `/usr/lib/aur-reviewer/` (package) or the root of the clone:
 
 ```bash
 aur-review --no-mark ~/.cache/yay/<pkg>/PKGBUILD          # changes since last approval
@@ -170,7 +186,7 @@ Read these before trusting a `safe`:
 - **An AI review is a filter, not a guarantee.** It catches the usual AUR
   attacks well (see [Evals](#evals)), but a careful attacker can still get
   something past it.
-- **Plain `yay` bypasses the review** unless you saved the flags as above.
+- **Plain `yay` bypasses the review** unless you alias it (see above).
 - **First reviews are cautious.** On a full review, long-standing install
   scripts, setuid helpers and the like are often marked `caution`. Once
   approved, later updates are judged by their diff.
@@ -189,7 +205,7 @@ fake `claude` (`tests/fake_claude.py`) that records what it was sent and
 returns configurable verdicts or failures. They cover review scope (full vs.
 incremental, force-pushes), the sandbox flags, failing closed, the approval
 prompts through a real pseudo-terminal, AUR metadata from a local server, and
-the `aur-update` wrapper. CI runs them on every push.
+the `yay-review` wrapper. CI runs them on every push.
 
 ### Evals
 
