@@ -1,0 +1,14 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit:
+    # The scripts run under /usr/bin/python3 (see their shebang); 24.04 ships 3.12.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit tests
+        run: /usr/bin/python3 -m unittest discover -s tests -v
