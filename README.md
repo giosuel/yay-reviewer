@@ -211,6 +211,28 @@ subtle, so a perfect score is a sanity check, not proof. Harder cases are
 welcome: realistic attacks, especially ones modelled on real AUR incidents,
 and realistic benign updates that the reviewer wrongly flags.
 
+### Releasing
+
+Push an annotated tag; its message becomes the release notes:
+
+```bash
+git tag -a v0.2.0 -m "What changed..."
+git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` then:
+
+1. runs the unit tests,
+2. creates the GitHub release,
+3. fills the tag's version and tarball checksum into
+   [`packaging/aur/PKGBUILD`](packaging/aur/PKGBUILD), builds it in an Arch
+   container (`check()` runs the tests again), and pushes it to the AUR.
+
+Changes to the PKGBUILD itself go through `packaging/aur/` like any other
+code. The AUR SSH key is the `AUR_SSH_PRIVATE_KEY` secret of the `aur`
+environment, which only `v*` tags may deploy to, and the job that sees it
+runs no third-party actions. The AUR host key is pinned in the workflow.
+
 ## License
 
 [AGPL-3.0](LICENSE)
