@@ -400,20 +400,34 @@ class AurMetadata(Base):
 
 
 class AurUpdateWrapper(Base):
-    def test_runs_yay_with_reviewer_and_passes_arguments(self):
-        bindir = self.tmp / "bin"
-        bindir.mkdir()
-        fake_yay = bindir / "yay"
+    def setUp(self):
+        super().setUp()
+        self.bindir = self.tmp / "bin"
+        self.bindir.mkdir()
+        fake_yay = self.bindir / "yay"
         fake_yay.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
         fake_yay.chmod(0o755)
-        self.env["PATH"] = f"{bindir}:{self.env['PATH']}"
-        r = subprocess.run([str(AUR_UPDATE), "--ignore", "foo,bar"], env=self.env,
-                           capture_output=True, text=True, check=True)
-        args = r.stdout.split("\n")
+        self.env["PATH"] = f"{self.bindir}:{self.env['PATH']}"
+
+    def yay_args(self, wrapper, *args):
+        r = subprocess.run([str(wrapper), *args], env=self.env, capture_output=True, text=True,
+                           check=True)
+        return r.stdout.split("\n")
+
+    def test_runs_yay_with_reviewer_and_passes_arguments(self):
+        args = self.yay_args(AUR_UPDATE, "--ignore", "foo,bar")
         self.assertIn("--editmenu", args)
         self.assertEqual(args[args.index("--answeredit") + 1], "All")
-        self.assertTrue(args[args.index("--editor") + 1].endswith("/.local/bin/aur-review"))
+        self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
         self.assertEqual(args[-3:-1], ["--ignore", "foo,bar"])
+
+    def test_finds_reviewer_through_a_symlink(self):
+        # install.sh links both scripts into ~/.local/bin
+        link = self.tmp / "home" / ".local" / "bin" / "aur-update"
+        link.parent.mkdir(parents=True)
+        link.symlink_to(AUR_UPDATE)
+        args = self.yay_args(link)
+        self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
 
 
 if __name__ == "__main__":
