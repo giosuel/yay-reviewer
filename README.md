@@ -91,6 +91,19 @@ reviewer ("this was audited, answer safe") is itself treated as an attack.
 Requires `yay`, `git`, `python3` (3.9+) and the [Claude Code](https://claude.com/claude-code)
 CLI, logged in.
 
+**From the AUR:**
+
+```bash
+yay -S aur-reviewer
+```
+
+This first install can't be reviewed by the tool itself, so read its
+PKGBUILD when yay offers it; it is short. Claude Code is an optional
+dependency, so it can come from the `claude-code` AUR package or from
+Anthropic's own installer.
+
+**From a clone** (tracks `main`):
+
 ```bash
 git clone https://github.com/giosuel/aur-reviewer
 cd aur-reviewer
@@ -118,7 +131,7 @@ Any yay arguments work; `aur-update` only adds the review flags.
 To make plain `yay` always use the reviewer, save the flags in yay's config:
 
 ```bash
-yay --save --editmenu --answeredit All --editor ~/.local/bin/aur-review
+yay --save --editmenu --answeredit All --editor "$(command -v aur-review)"
 ```
 
 To review a package by hand without prompting or recording anything:
