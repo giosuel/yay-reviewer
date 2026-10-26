@@ -93,16 +93,15 @@ Same arguments, same prompts. Alias it to `yay` and forget it's there.
 
 You need `yay`, `git`, `python` and the [Claude Code](https://claude.com/claude-code) CLI, logged in.
 
-**Arch Linux**: from the AUR, `yay -S yay-reviewer`. This first install can't review itself, so read its PKGBUILD when yay shows it; it's short. Claude Code is an optional dependency: the `claude-code` AUR package or Anthropic's own installer both work.
-
-**From a clone** (tracks `main`):
+From the AUR:
 
 ```sh
-git clone https://github.com/giosuel/yay-reviewer && cd yay-reviewer
-./install.sh        # links yay-review into ~/.local/bin, no sudo
+yay -S yay-reviewer
 ```
 
-`install.sh` is safe to run again; it replaces copies or stale links (backing up any copy that differs) and removes links left by earlier versions. `git pull` updates the tool.
+This first install can't review itself, so read its PKGBUILD when yay shows it; it's short. Claude Code is an optional dependency: the `claude-code` AUR package or Anthropic's own installer both work.
+
+To try the latest `main` without installing, run `./yay-review` from a clone.
 
 **Review plain `yay` too** by aliasing it:
 
