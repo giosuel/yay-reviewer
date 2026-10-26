@@ -437,7 +437,7 @@ class YayReviewWrapper(Base):
         self.assertEqual(self.yay_args(YAY_REVIEW)[-2], str(HOOK))  # plain yay = -Syu
 
     def test_finds_reviewer_through_a_symlink(self):
-        # install.sh links both scripts into ~/.local/bin
+        # e.g. a clone's yay-review linked into ~/.local/bin by hand
         link = self.tmp / "home" / ".local" / "bin" / "yay-review"
         link.parent.mkdir(parents=True)
         link.symlink_to(YAY_REVIEW)

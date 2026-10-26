@@ -7,8 +7,8 @@
 # its build files through yay's edit menu (see yay-reviewer-hook). Nothing is built
 # unless every package is approved.
 
-# yay-reviewer-hook sits next to this script in a clone (also through install.sh's
-# symlinks), and in /usr/lib/yay-reviewer/ when installed as a package.
+# yay-reviewer-hook sits next to this script in a clone (also when this script is
+# reached through a symlink), and in /usr/lib/yay-reviewer/ when installed as a package.
 here="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 for hook in "$here/yay-reviewer-hook" /usr/lib/yay-reviewer/yay-reviewer-hook; do
     [[ -x "$hook" ]] && break
