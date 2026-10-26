@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-45 0 840 300" width="840" height="300" role="img" aria-labelledby="t d">
+  <title id="t">yay-reviewer</title>
+  <desc id="d">The Claude Code mascot holds a magnifying glass over the PKGBUILD of an AUR package, ticking off each line until it is marked safe.</desc>
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity=".28"/>
+    </filter>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset=".5" stop-color="#bfe6ff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity=".16"/>
+    </linearGradient>
+    <linearGradient id="boxside" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1279ad"/>
+      <stop offset="1" stop-color="#0d5f88"/>
+    </linearGradient>
+    <style>
+      text { font-family: "Inter", "Cantarell", system-ui, -apple-system, "Segoe UI", sans-serif; }
+      .mono { font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace; }
+
+      .bob { animation: bob 2.6s ease-in-out infinite; }
+      @keyframes bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -5px; } }
+
+      .sweep { transform-box: view-box; transform-origin: 555px 215px;
+               animation: sweep 8.0s ease-in-out infinite; }
+      @keyframes sweep {
+        0.00% { rotate: 40.39deg; }
+        5.25% { rotate: 40.39deg; }
+        8.75% { rotate: 32.05deg; }
+        14.00% { rotate: 32.05deg; }
+        17.50% { rotate: 24.41deg; }
+        22.75% { rotate: 24.41deg; }
+        26.25% { rotate: 17.21deg; }
+        31.50% { rotate: 17.21deg; }
+        35.00% { rotate: 10.29deg; }
+        40.25% { rotate: 10.29deg; }
+        43.75% { rotate: 3.51deg; }
+        49.00% { rotate: 3.51deg; }
+        57.50% { rotate: 3.51deg; }
+        80.00% { rotate: 40.39deg; }
+        100.00% { rotate: 40.39deg; }
+      }
+
+      .hl, .tick { opacity: 0; animation: mark 8.0s ease-out infinite both; }
+      @keyframes mark { 0% { opacity: 0; } 3%, 78% { opacity: 1; } 88%, 100% { opacity: 0; } }
+
+      .verdict { transform-box: fill-box; transform-origin: center; opacity: 0;
+                 animation: verdict 8.0s cubic-bezier(.3, 1.6, .5, 1) infinite; }
+      @keyframes verdict {
+        0%, 52.5% { opacity: 0; scale: .4; }
+        56.5%, 86% { opacity: 1; scale: 1; }
+        94%, 100% { opacity: 0; scale: 1; }
+      }
+
+      .blink { opacity: 0; animation: blink 4.6s steps(1) infinite; }
+      @keyframes blink { 0%, 93% { opacity: 0; } 94%, 97% { opacity: 1; } 98%, 100% { opacity: 0; } }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bob, .sweep, .hl, .tick, .verdict, .blink { animation: none; }
+        .hl, .tick, .verdict { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <!-- floor shadows -->
+  <ellipse cx="160" cy="269" rx="105" ry="9" fill="#000" fill-opacity=".14"/>
+  <ellipse cx="345.0" cy="269" rx="101.0" ry="7" fill="#000" fill-opacity=".10"/>
+  <ellipse cx="630" cy="269" rx="70" ry="8" fill="#000" fill-opacity=".14"/>
+
+  <!-- the AUR package: an Arch-blue box -->
+  <g filter="url(#shadow)">
+    <path d="M70 140 L110 110 L270 110 L230 140 Z" fill="#45b3e8"/>
+    <path d="M230 140 L270 110 L270 235 L230 265 Z" fill="url(#boxside)"/>
+    <rect x="70" y="140" width="160" height="125" fill="#1793d1"/>
+    <path d="M70 140 L230 140" stroke="#0d5f88" stroke-opacity=".5" stroke-width="2"/>
+    <path d="M118 140 L158 110 L176 110 L136 140 Z" fill="#c9ecff" fill-opacity=".55"/>
+    <path transform="translate(122 152) scale(2.35)" d="M11.39.605C10.376 3.092 9.764 4.72 8.635 7.132c.693.734 1.543 1.589 2.923 2.554-1.484-.61-2.496-1.224-3.252-1.86C6.86 10.842 4.596 15.138 0 23.395c3.612-2.085 6.412-3.37 9.021-3.862a6.61 6.61 0 01-.171-1.547l.003-.115c.058-2.315 1.261-4.095 2.687-3.973 1.426.12 2.534 2.096 2.478 4.409a6.52 6.52 0 01-.146 1.243c2.58.505 5.352 1.787 8.914 3.844-.702-1.293-1.33-2.459-1.929-3.57-.943-.73-1.926-1.682-3.933-2.713 1.38.359 2.367.772 3.137 1.234-6.09-11.334-6.582-12.84-8.67-17.74z" fill="#fff"/>
+    <text x="150" y="251" text-anchor="middle" font-size="17" font-weight="800" letter-spacing="3" fill="#fff">AUR</text>
+  </g>
+
+  <!-- the PKGBUILD being read -->
+  <g filter="url(#shadow)">
+    <path d="M250 40 h168 l22 22 v203 h-190 Z" fill="#fbf8f1"/>
+    <path d="M418 40 v22 h22 Z" fill="#e6dfcf"/>
+    <text class="mono" x="264" y="64" font-size="12" font-weight="700" fill="#8a8170" letter-spacing="1">PKGBUILD</text>
+    <rect class="hl" style="animation-delay:0.0s" x="260" y="78" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:0.0s" d="M264 88 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="92" font-size="12.5" fill="#33302b">pkgname=pixelnote</text>
+    <rect class="hl" style="animation-delay:0.7s" x="260" y="101" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:0.7s" d="M264 111 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="115" font-size="12.5" fill="#33302b">pkgver=2.5.0</text>
+    <rect class="hl" style="animation-delay:1.4s" x="260" y="124" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:1.4s" d="M264 134 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="138" font-size="12.5" fill="#33302b">source=("$url/…")</text>
+    <rect class="hl" style="animation-delay:2.1s" x="260" y="147" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:2.1s" d="M264 157 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="161" font-size="12.5" fill="#33302b">sha256sums=('9b1d…')</text>
+    <rect class="hl" style="animation-delay:2.8s" x="260" y="170" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:2.8s" d="M264 180 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="184" font-size="12.5" fill="#33302b">package() {</text>
+    <rect class="hl" style="animation-delay:3.5s" x="260" y="193" width="170" height="20" rx="5" fill="#2fbf71" fill-opacity=".16"/>
+    <path class="tick" style="animation-delay:3.5s" d="M264 203 l4 4 l8 -9" fill="none" stroke="#2fbf71" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text class="mono" x="282" y="207" font-size="12.5" fill="#33302b">  install -Dm755 …</text>
+  </g>
+
+  <!-- verdict -->
+  <g class="verdict">
+    <rect x="262" y="223" width="96" height="30" rx="15" fill="#2fbf71"/>
+    <path d="M277 238 l5 5 l9 -10" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="299" y="243" font-size="14" font-weight="800" letter-spacing="1.5" fill="#fff">SAFE</text>
+  </g>
+
+  <!-- Claude Code mascot with its magnifying glass -->
+  <g class="bob">
+    <g class="sweep">
+      <path d="M555 215 L403 215" stroke="#8a8f98" stroke-width="10" stroke-linecap="round"/>
+      <path d="M555 215 L479 215" stroke="#a8683f" stroke-width="13" stroke-linecap="round"/>
+      <circle cx="359" cy="215" r="40" fill="url(#glass)" stroke="#8a8f98" stroke-width="7"/>
+      <path d="M335 207 a26 26 0 0 1 18 -18" fill="none" stroke="#fff" stroke-opacity=".85" stroke-width="5" stroke-linecap="round"/>
+    </g>
+    <g fill="#d97757">
+      <path shape-rendering="crispEdges" d="M570 165h120v20h-120zM570 185h20v20h-20zM600 185h60v20h-60zM670 185h20v20h-20zM550 205h160v20h-160zM570 225h120v20h-120zM580 245h10v20h-10zM600 245h10v20h-10zM650 245h10v20h-10zM670 245h10v20h-10z"/>
+    </g>
+    <g fill="#1d1a19">
+      <rect x="590" y="185" width="10" height="20"/><rect x="660" y="185" width="10" height="20"/>
+    </g>
+    <g class="blink" fill="#d97757">
+      <rect x="590" y="185" width="10" height="20"/><rect x="660" y="185" width="10" height="20"/>
+    </g>
+  </g>
+</svg>
