@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "block",
+  "description": "Obfuscated base64 blob decoded and executed in build(), labelled as a build fix.",
+  "commit_message": "fix build with newer setuptools",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

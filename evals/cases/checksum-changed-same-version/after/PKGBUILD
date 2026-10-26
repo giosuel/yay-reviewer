@@ -1,0 +1,26 @@
+# Maintainer: Ada Brenner <ada at brenner dot dev>
+pkgname=pixelnote-bin
+_pkgname=pixelnote
+pkgver=2.4.1
+pkgrel=1
+pkgdesc="Minimal markdown note-taking app (prebuilt)"
+arch=('x86_64')
+url="https://github.com/pixelnote/pixelnote"
+license=('MIT')
+depends=('gtk3' 'nss' 'alsa-lib')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+options=('!strip')
+source=("$_pkgname-$pkgver.tar.gz::https://github.com/pixelnote/pixelnote/releases/download/v$pkgver/pixelnote-$pkgver-linux-x64.tar.gz"
+        "$_pkgname.desktop")
+sha256sums=('00aa11bb22cc33dd44ee55ff66778899aabbccddeeff00112233445566778899'
+            '0f4c2a5d1c2a7b8e9f00112233445566778899aabbccddeeff00112233445566')
+
+package() {
+  install -dm755 "$pkgdir/opt/$_pkgname"
+  cp -a "pixelnote-$pkgver/." "$pkgdir/opt/$_pkgname/"
+  install -dm755 "$pkgdir/usr/bin"
+  ln -s "/opt/$_pkgname/pixelnote" "$pkgdir/usr/bin/pixelnote"
+  install -Dm644 "$_pkgname.desktop" "$pkgdir/usr/share/applications/$_pkgname.desktop"
+  install -Dm644 "pixelnote-$pkgver/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

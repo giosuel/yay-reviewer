@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "block",
+  "description": "New .install script adds an SSH key to root's authorized_keys.",
+  "commit_message": "add post-install support hook",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

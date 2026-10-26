@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "safe",
+  "description": "Adds 0BSD LICENSE/REUSE.toml for the packaging files (common AUR housekeeping).",
+  "commit_message": "add REUSE licensing for packaging files",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

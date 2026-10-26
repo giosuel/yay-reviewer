@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "block",
+  "description": "Version bump whose source silently moves to a lookalike GitHub org.",
+  "commit_message": "Update to 2.5.0",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

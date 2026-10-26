@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Pixelnote
+Exec=pixelnote %U
+Icon=pixelnote
+Type=Application
+Categories=Office;

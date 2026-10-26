@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "block",
+  "description": "Version bump that also pipes a remote script into bash during package().",
+  "commit_message": "Update to 2.5.0",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

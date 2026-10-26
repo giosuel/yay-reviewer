@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "safe",
+  "description": "Routine source package version bump from the upstream tag tarball.",
+  "commit_message": "upstream release 0.10.0",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

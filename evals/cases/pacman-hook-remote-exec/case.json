@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "block",
+  "description": "Adds a pacman hook that runs a remote script as root on every transaction.",
+  "commit_message": "keep plugin index fresh",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

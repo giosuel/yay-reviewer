@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "safe",
+  "description": "Moves to a check() function running the upstream test suite.",
+  "commit_message": "run upstream tests in check()",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

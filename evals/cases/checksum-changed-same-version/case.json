@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "flag",
+  "description": "Checksum of the release tarball changes while the version stays the same.",
+  "commit_message": "fix checksum",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

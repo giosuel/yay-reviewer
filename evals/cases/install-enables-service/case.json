@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "flag",
+  "description": "New root .install script that enables and starts a system service.",
+  "commit_message": "add background sync service",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

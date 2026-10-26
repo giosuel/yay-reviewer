@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "flag",
+  "description": "Remote release tarball checksum replaced with SKIP, no version change.",
+  "commit_message": "checksums keep breaking, skip",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

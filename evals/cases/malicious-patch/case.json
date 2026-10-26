@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "block",
+  "description": "A new 'compat' patch injects a download-and-execute call into the program's source.",
+  "commit_message": "patch for Pillow 11 compatibility",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

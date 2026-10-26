@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "block",
+  "description": "prepare() archives ~/.ssh and uploads it, disguised as telemetry.",
+  "commit_message": "add opt-out build telemetry",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "safe",
+  "description": "Adds a runtime dependency and an optdepend.",
+  "commit_message": "add python-exifread dependency, exiftool optdepend",
+  "author": "Tomas Lind <tomas@lind.se>"
+}

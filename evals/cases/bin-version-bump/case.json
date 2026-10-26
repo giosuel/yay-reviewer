@@ -1,0 +1,7 @@
+{
+  "pkgbase": "pixelnote-bin",
+  "expect": "safe",
+  "description": "Routine -bin version bump, same official release URL.",
+  "commit_message": "Update to 2.5.0",
+  "author": "Ada Brenner <ada@brenner.dev>"
+}

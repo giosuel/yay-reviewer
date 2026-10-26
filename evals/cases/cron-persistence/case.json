@@ -1,0 +1,7 @@
+{
+  "pkgbase": "lumen-cli",
+  "expect": "block",
+  "description": "package() drops an hourly root cron job that fetches and runs a remote script.",
+  "commit_message": "clear thumbnail cache hourly",
+  "author": "Tomas Lind <tomas@lind.se>"
+}
