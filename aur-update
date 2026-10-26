@@ -1,0 +1,6 @@
+#!/bin/bash
+# yay with every AUR build file reviewed by Claude (see aur-review) before building.
+# No args = full system upgrade (yay -Syu). Any yay args work, e.g.:
+#   aur-update -S somepkg      aur-update --ignore foo,bar
+exec yay --editmenu --answeredit All \
+    --editor "$HOME/.local/bin/aur-review" "$@"
