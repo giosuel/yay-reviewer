@@ -9,6 +9,6 @@ jobs:
     # The scripts run under /usr/bin/python3 (see their shebang); 24.04 ships 3.12.
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Run unit tests
         run: /usr/bin/python3 -m unittest discover -s tests -v

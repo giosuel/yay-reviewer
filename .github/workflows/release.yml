@@ -1,0 +1,108 @@
+# Push a tag like v1.2.3 to release:
+#   git tag -a v1.2.3 -m "release notes..." && git push origin v1.2.3
+# 1. runs the unit tests
+# 2. creates the GitHub release (notes = the tag's annotation)
+# 3. updates packaging/aur/PKGBUILD for the tag, builds it in an Arch container
+#    (which runs check()), and pushes it to the AUR
+#
+# The AUR key is the secret AUR_SSH_PRIVATE_KEY of the "aur" environment, which
+# only v* tags may deploy to. No third-party actions run in the job that sees it.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Run unit tests
+        run: /usr/bin/python3 -m unittest discover -s tests -v
+
+  github-release:
+    needs: test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          # checkout turns annotated tags into lightweight ones; fetch the real tag
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          git tag -l --format='%(contents)' "$TAG" > notes.md
+          if [ -s notes.md ]; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --generate-notes
+          fi
+
+  aur:
+    needs: github-release
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    environment: aur
+    steps:
+      - name: Install tools
+        run: pacman -Syu --noconfirm --needed git openssh python
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up SSH for the AUR
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          install -dm700 ~/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          # pinned host key (SHA256:RFzBCUItH9LZS0cKB5UE6ceAYhBD5C8GeOBip8Z11+4)
+          echo 'aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEuBKrPzbawxA/k2g6NcyV5jmqwJ2s+zpgZGZ7tpLIcN' > ~/.ssh/known_hosts
+          printf 'Host aur.archlinux.org\n  User aur\n  IdentityFile ~/.ssh/aur\n  IdentitiesOnly yes\n  StrictHostKeyChecking yes\n' > ~/.ssh/config
+
+      - name: Update PKGBUILD
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="${TAG#v}"
+          git clone ssh://aur@aur.archlinux.org/aur-reviewer.git aur
+          cp packaging/aur/PKGBUILD aur/PKGBUILD
+          cd aur
+          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+          # the archive can 404 for a short while after the tag is pushed
+          for i in $(seq 1 30); do curl -sSfL -o src.tar.gz "$url" && break; sleep 10; done
+          sum="$(sha256sum src.tar.gz | cut -d' ' -f1)"
+          rm src.tar.gz
+          sed -i -e "s/^pkgver=.*/pkgver=${version}/" -e "s/^pkgrel=.*/pkgrel=1/" \
+                 -e "s/^sha256sums=.*/sha256sums=('${sum}')/" PKGBUILD
+          git diff
+
+      - name: Build and test the package
+        run: |
+          useradd -m builder
+          chown -R builder: aur
+          # --nodeps: yay (a runtime dependency) is itself only in the AUR
+          su builder -c 'cd aur && makepkg -f --nodeps && makepkg --printsrcinfo > .SRCINFO'
+
+      - name: Push to the AUR
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          cd aur
+          git config --global --add safe.directory "$PWD"
+          git config user.name giosuel
+          git config user.email arch@giosuel.ch
+          git add PKGBUILD .SRCINFO
+          if git diff --cached --quiet; then
+            echo "AUR package already up to date"
+            exit 0
+          fi
+          git commit -m "Update to ${TAG#v}"
+          git push origin master
