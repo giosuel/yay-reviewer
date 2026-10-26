@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/hero.svg" alt="The Claude Code mascot holds a magnifying glass over the PKGBUILD of an AUR package, ticking off each line until it is marked safe" width="760">
+
 # yay-reviewer
 
 **yay, but Claude reads every AUR package's build files before they're built.**<br>
