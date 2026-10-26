@@ -9,9 +9,16 @@ Each approved revision is recorded in the clone as the git ref CLAUDE_REVIEWED,
 so later runs only review what changed since the last approval.
 
 Usage (normally via aur-update):
-  aur-review [--no-mark] [--full] PKGBUILD...
+  aur-review [--no-mark] [--full] [--json] PKGBUILD...
     --no-mark  review only: never prompt, never record approvals (for testing)
     --full     ignore CLAUDE_REVIEWED and review every file from scratch
+    --json     print results as JSON on stdout instead of the human-readable report
+
+Environment:
+  AUR_REVIEW_MODEL    model passed to claude (default: claude's own default)
+  AUR_REVIEW_WORKERS  reviews run in parallel (default: 4)
+  AUR_REVIEW_CLAUDE   claude executable (default: claude)
+  AUR_REVIEW_AUR_RPC  AUR RPC info endpoint; empty disables the metadata lookup
 """
 
 import concurrent.futures
@@ -29,6 +36,8 @@ REF = "CLAUDE_REVIEWED"
 STATE = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state")) / "aur-review"
 WORKERS = int(os.environ.get("AUR_REVIEW_WORKERS", "4"))
 MODEL = os.environ.get("AUR_REVIEW_MODEL")  # unset = your claude default
+CLAUDE = os.environ.get("AUR_REVIEW_CLAUDE", "claude")
+AUR_RPC = os.environ.get("AUR_REVIEW_AUR_RPC", "https://aur.archlinux.org/rpc/v5/info")
 TIMEOUT = 900
 MAX_TEXT = 150_000  # chars of diff / file content fed into the prompt
 
@@ -115,8 +124,10 @@ def clip(s, n=MAX_TEXT):
 
 
 def aur_info(base):
+    if not AUR_RPC:
+        return {}
     try:
-        url = "https://aur.archlinux.org/rpc/v5/info?" + urllib.parse.urlencode({"arg[]": base})
+        url = AUR_RPC + "?" + urllib.parse.urlencode({"arg[]": base})
         with urllib.request.urlopen(url, timeout=15) as r:
             res = json.load(r)["results"]
         for x in res:
@@ -189,7 +200,7 @@ def gather(pkgbuild, full):
 
 
 def review(item):
-    cmd = ["claude", "-p", "--restricted", "--strict-mcp-config",
+    cmd = [CLAUDE, "-p", "--restricted", "--strict-mcp-config",
            "--tools", "Read,Grep,Glob", "--no-session-persistence",
            "--output-format", "json", "--json-schema", json.dumps(SCHEMA),
            "--append-system-prompt", SYSTEM]
@@ -216,23 +227,23 @@ def review(item):
     return item
 
 
-def show(item):
+def show(item, out=sys.stdout):
     res = item["result"]
     v = res["verdict"]
     col = {"safe": C["green"], "caution": C["yellow"], "block": C["red"]}[v]
     mode = "full review" if not item["prev"] else f"changes since {item['prev'][:7]}"
     cost = f", ${res['cost']:.2f}" if res.get("cost") else ""
     print(f"{col}[{v.upper():7}]{C['off']} {C['blue']}{item['base']}{C['off']} "
-          f"{C['dim']}({mode}{cost}){C['off']}")
+          f"{C['dim']}({mode}{cost}){C['off']}", file=out)
     if v == "safe":
         return
     if res["summary"]:
-        print(textwrap.indent(textwrap.fill(res["summary"], 100), "          "))
+        print(textwrap.indent(textwrap.fill(res["summary"], 100), "          "), file=out)
     for f in res.get("findings", []):
         if f["severity"] == "info":
             continue
         print(f"          - {f['severity']}: {f['file']}: "
-              + textwrap.fill(f["detail"], 100, subsequent_indent="            ").lstrip())
+              + textwrap.fill(f["detail"], 100, subsequent_indent="            ").lstrip(), file=out)
 
 
 def ask(prompt):
@@ -243,7 +254,7 @@ def ask(prompt):
             out.flush()
             return inp.readline().strip()
     except OSError as e:
-        print(f"          {C['red']}cannot prompt (no terminal: {e}), rejecting{C['off']}")
+        print(f"          {C['red']}cannot prompt (no terminal: {e}), rejecting{C['off']}", file=sys.stderr)
         return ""
 
 
@@ -258,6 +269,8 @@ def mark(item):
 def main(argv):
     no_mark = "--no-mark" in argv
     full = "--full" in argv
+    as_json = "--json" in argv
+    out = sys.stderr if as_json else sys.stdout
     pkgbuilds = [a for a in argv if not a.startswith("--")]
     if not pkgbuilds:
         print(__doc__)
@@ -268,24 +281,26 @@ def main(argv):
         try:
             it = gather(p, full)
         except Exception as e:
-            print(f"{C['red']}error preparing {p}: {e}{C['off']}")
+            print(f"{C['red']}error preparing {p}: {e}{C['off']}", file=out)
             return 1
         items.append(it)
         if it["skip"]:
-            print(f"{C['green']}[ OK    ]{C['off']} {it['base']} {C['dim']}(unchanged since last approval){C['off']}")
+            print(f"{C['green']}[ OK    ]{C['off']} {it['base']} {C['dim']}(unchanged since last approval){C['off']}",
+                  file=out)
         else:
             todo.append(it)
 
     if todo:
         print(f"{C['blue']}::{C['off']} Claude is reviewing {len(todo)} package(s): "
-              + ", ".join(i["base"] for i in todo), flush=True)
+              + ", ".join(i["base"] for i in todo), file=out, flush=True)
     with concurrent.futures.ThreadPoolExecutor(WORKERS) as ex:
         done = list(ex.map(review, todo))
 
     rejected = []
     for it in done:
-        show(it)
+        show(it, out)
         v = it["result"]["verdict"]
+        it["approved"] = False
         if no_mark:
             continue
         if v == "safe":
@@ -296,15 +311,24 @@ def main(argv):
             ok = ask(f"          Type 'override' to build {it['base']} anyway, Enter to reject: ") == "override"
         if ok:
             mark(it)
+            it["approved"] = True
         else:
             rejected.append(it["base"])
+        print(file=out)
+
+    if as_json:
+        json.dump([{"base": it["base"], "head": it["head"], "prev": it.get("prev"),
+                    "skipped": it["skip"], "approved": it.get("approved", it["skip"]),
+                    **({k: it["result"].get(k) for k in ("verdict", "summary", "findings", "cost", "error")}
+                       if "result" in it else {})}
+                   for it in items], sys.stdout, indent=2)
         print()
 
     if rejected:
-        print(f"{C['red']}Rejected: {' '.join(rejected)}{C['off']}")
+        print(f"{C['red']}Rejected: {' '.join(rejected)}{C['off']}", file=out)
         print(f"Nothing was built. To upgrade everything else: "
-              f"aur-update --ignore {','.join(rejected)}")
-        print(f"Review logs: {STATE / 'log'}")
+              f"aur-update --ignore {','.join(rejected)}", file=out)
+        print(f"Review logs: {STATE / 'log'}", file=out)
         return 1
     return 0
 
