@@ -19,7 +19,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 AUR_REVIEW = ROOT / "aur-review"
-AUR_UPDATE = ROOT / "aur-update"
+YAY_REVIEW = ROOT / "yay-review"
 FAKE_CLAUDE = ROOT / "tests" / "fake_claude.py"
 REF = "CLAUDE_REVIEWED"
 
@@ -306,7 +306,7 @@ class Prompts(Base):
         self.verdicts(demo="caution")
         code, out = self.run_review_tty([p.pkgbuild], [""])
         self.assertEqual(code, 1)
-        self.assertIn("aur-update --ignore demo", out)
+        self.assertIn("yay-review -Syu --ignore demo", out)
         self.assertIsNone(p.reviewed())
 
     def test_block_is_not_overridden_by_y(self):
@@ -330,7 +330,7 @@ class Prompts(Base):
         self.assertEqual(code, 1)
         self.assertEqual(good.reviewed(), good.head())
         self.assertIsNone(bad.reviewed())
-        self.assertIn("aur-update --ignore bad", out)
+        self.assertIn("yay-review -Syu --ignore bad", out)
 
     def test_safe_needs_no_input(self):
         p = self.pkg()
@@ -399,7 +399,7 @@ class AurMetadata(Base):
         self.assertIn("AUR metadata:", self.calls()[0]["prompt"])
 
 
-class AurUpdateWrapper(Base):
+class YayReviewWrapper(Base):
     def setUp(self):
         super().setUp()
         self.bindir = self.tmp / "bin"
@@ -415,19 +415,34 @@ class AurUpdateWrapper(Base):
         return r.stdout.split("\n")
 
     def test_runs_yay_with_reviewer_and_passes_arguments(self):
-        args = self.yay_args(AUR_UPDATE, "--ignore", "foo,bar")
+        args = self.yay_args(YAY_REVIEW, "-Syu", "--ignore", "foo,bar")
         self.assertIn("--editmenu", args)
         self.assertEqual(args[args.index("--answeredit") + 1], "All")
         self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
-        self.assertEqual(args[-3:-1], ["--ignore", "foo,bar"])
+        self.assertEqual(args[-4:-1], ["-Syu", "--ignore", "foo,bar"])
+
+    def test_install_and_no_arguments_pass_through(self):
+        self.assertEqual(self.yay_args(YAY_REVIEW, "-S", "somepkg")[-3:-1], ["-S", "somepkg"])
+        self.assertEqual(self.yay_args(YAY_REVIEW)[-2], str(AUR_REVIEW))  # plain yay = -Syu
 
     def test_finds_reviewer_through_a_symlink(self):
         # install.sh links both scripts into ~/.local/bin
-        link = self.tmp / "home" / ".local" / "bin" / "aur-update"
+        link = self.tmp / "home" / ".local" / "bin" / "yay-review"
         link.parent.mkdir(parents=True)
-        link.symlink_to(AUR_UPDATE)
+        link.symlink_to(YAY_REVIEW)
         args = self.yay_args(link)
         self.assertEqual(args[args.index("--editor") + 1], str(AUR_REVIEW))
+
+    def test_missing_reviewer_is_an_error_not_an_unreviewed_build(self):
+        lone = self.tmp / "lone" / "yay-review"
+        lone.parent.mkdir()
+        shutil.copy(YAY_REVIEW, lone)
+        r = subprocess.run([str(lone), "-Syu"], env=self.env, capture_output=True, text=True)
+        if Path("/usr/lib/aur-reviewer/aur-review").exists():
+            self.skipTest("aur-reviewer package installed; fallback path exists")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("cannot find aur-review", r.stderr)
+        self.assertEqual(r.stdout, "")  # yay was never called
 
 
 if __name__ == "__main__":

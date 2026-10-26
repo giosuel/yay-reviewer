@@ -1,6 +1,8 @@
 #!/usr/bin/python3 -I
 """Claude-powered AUR build-file reviewer, called by yay as its PKGBUILD "editor".
 
+You normally don't run this yourself: yay-review hands it to yay.
+
 yay passes one PKGBUILD path per package base, *after* merging the new AUR
 revision and *before* downloading sources or building. Exiting non-zero makes
 yay abort the whole transaction, so nothing unreviewed gets built.
@@ -8,7 +10,7 @@ yay abort the whole transaction, so nothing unreviewed gets built.
 Each approved revision is recorded in the clone as the git ref CLAUDE_REVIEWED,
 so later runs only review what changed since the last approval.
 
-Usage (normally via aur-update):
+Usage (normally called by yay through yay-review):
   aur-review [--no-mark] [--full] [--json] PKGBUILD...
     --no-mark  review only: never prompt, never record approvals (for testing)
     --full     ignore CLAUDE_REVIEWED and review every file from scratch
@@ -326,8 +328,9 @@ def main(argv):
 
     if rejected:
         print(f"{C['red']}Rejected: {' '.join(rejected)}{C['off']}", file=out)
-        print(f"Nothing was built. To upgrade everything else: "
-              f"aur-update --ignore {','.join(rejected)}", file=out)
+        print(f"Nothing was built. To skip them, run your command again with "
+              f"--ignore {','.join(rejected)}, e.g. yay-review -Syu --ignore {','.join(rejected)}",
+              file=out)
         print(f"Review logs: {STATE / 'log'}", file=out)
         return 1
     return 0

@@ -18,6 +18,7 @@ check() {
 
 package() {
   cd "$pkgname-$pkgver"
-  install -Dm755 aur-review aur-update -t "$pkgdir/usr/bin/"
+  install -Dm755 yay-review -t "$pkgdir/usr/bin/"
+  install -Dm755 aur-review -t "$pkgdir/usr/lib/$pkgname/"
   install -Dm644 README.md -t "$pkgdir/usr/share/doc/$pkgname/"
 }

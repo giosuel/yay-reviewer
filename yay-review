@@ -1,8 +1,21 @@
 #!/bin/bash
-# yay with every AUR build file reviewed by Claude (see aur-review) before building.
-# No args = full system upgrade (yay -Syu). Any yay args work, e.g.:
-#   aur-update -S somepkg      aur-update --ignore foo,bar
-# Uses the aur-review next to this script's real location, so it works both
-# from /usr/bin (AUR package) and through the ~/.local/bin symlinks (install.sh).
+# yay-review: use it exactly like yay, e.g.
+#   yay-review              (= yay -Syu)
+#   yay-review -S somepkg
+#   yay-review -Syu --ignore foo
+# Before yay builds any AUR package (new installs and upgrades), Claude reviews
+# its build files through yay's edit menu (see aur-review). Nothing is built
+# unless every package is approved.
+
+# aur-review sits next to this script in a clone (also through install.sh's
+# symlinks), and in /usr/lib/aur-reviewer/ when installed as a package.
 here="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
-exec yay --editmenu --answeredit All --editor "$here/aur-review" "$@"
+for hook in "$here/aur-review" /usr/lib/aur-reviewer/aur-review; do
+    [[ -x "$hook" ]] && break
+done
+if [[ ! -x "$hook" ]]; then
+    echo "yay-review: cannot find aur-review (looked in $here and /usr/lib/aur-reviewer)" >&2
+    exit 1
+fi
+
+exec yay --editmenu --answeredit All --editor "$hook" "$@"

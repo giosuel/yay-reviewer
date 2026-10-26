@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Links aur-review and aur-update from this repository into ~/.local/bin.
+# Links yay-review from this repository into ~/.local/bin. (aur-review stays in
+# the repo; yay-review finds it next to its own real location.)
 #
 # Runs as your normal user (no sudo): yay, makepkg and claude all run as you.
 # Safe to run repeatedly. Copies or links pointing elsewhere are replaced by
@@ -21,7 +22,8 @@ BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 BACKUP_ROOT="${BACKUP_ROOT:-${XDG_STATE_HOME:-$HOME/.local/state}/aur-review/backups}"
 BACKUP_DIR="$BACKUP_ROOT/$(date +%Y%m%d-%H%M%S)"
 
-SCRIPTS=(aur-review aur-update)
+SCRIPTS=(yay-review)
+OBSOLETE=(aur-update aur-review)  # earlier versions linked these too
 
 # ---- Checks -----------------------------------------------------------------
 for f in "${SCRIPTS[@]}"; do
@@ -68,6 +70,15 @@ link_file() {
     ln -sfn "$src" "$dst"
 }
 
+# ---- Cleanup of links from earlier versions --------------------------------
+for f in "${OBSOLETE[@]}"; do
+    dst="$BIN_DIR/$f"
+    if [[ -L "$dst" && "$(readlink -f "$dst")" == "$REPO_DIR/"* ]]; then
+        rm "$dst"
+        echo "  remove   $dst (no longer installed)"
+    fi
+done
+
 echo "Linking files from $REPO_DIR"
 mkdir -p "$BIN_DIR"
 for f in "${SCRIPTS[@]}"; do
@@ -80,4 +91,4 @@ case ":$PATH:" in
 esac
 
 echo
-echo "Done. Upgrade with: aur-update"
+echo "Done. Use yay-review like yay, e.g.: yay-review -Syu"
